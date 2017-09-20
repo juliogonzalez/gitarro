@@ -1,5 +1,5 @@
 #! /usr/bin/ruby
-
+# Just a comment to force git run tests for ruby files
 require 'octokit'
 require 'optparse'
 require 'English'
