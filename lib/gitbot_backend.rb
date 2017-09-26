@@ -6,8 +6,8 @@ require 'English'
 require_relative 'opt_parser'
 require_relative 'git_op'
 
-# this class is the backend of gitbot, were we execute the tests and so on
-class GitbotBackend
+# this class is the backend of gitbot, were we execute the tests and so ona
+class GitbotBackend[]:
   attr_accessor :j_status, :options, :client, :pr_files
   # public method of backend
   def initialize(option = nil)
