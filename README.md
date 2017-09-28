@@ -1,4 +1,4 @@
-# Gitbot
+# Gitbota
 ![GUNDAM image](help/gundam.jpg)
 ![GUNDAM image](help/gundam.jpg)
 
