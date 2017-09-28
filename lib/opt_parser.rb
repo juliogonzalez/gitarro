@@ -74,6 +74,14 @@ module OptionalOptions
     opt.on('--https', https_desc) { |https| @options[:https] = https }
   end
 
+  def change_newer(opt)
+    change_newer_desc = 'If present, will only check PRs with a change in ' \
+                       'the last X minutes'
+    opt.on("--change_newer 'MINUTES'", change_newer_desc) do |change_newer|
+      @options[:change_newer] = Integer(change_newer)
+    end
+  end
+
   def changelog_opt(opt)
     desc = 'Check if the PR includes a changelog entry ' \
            '(Automatically sets --file ".changes").'
@@ -101,6 +109,7 @@ module OptionalOptions
     url_opt(opt)
     pr_number(opt)
     https_opt(opt)
+    change_newer(opt)
   end
 end
 
@@ -165,6 +174,7 @@ class OptParserInternal
     @options[:changelog_test] = false if @options[:changelog_test].nil?
     @options[:target_url] = '' if @options[:target_url].nil?
     @options[:https] = false if @options[:https].nil?
+    @options[:change_newer] = -1 if @options[:change_newer].nil?
   end
 
   def defaults_to_text

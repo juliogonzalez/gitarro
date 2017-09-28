@@ -1,7 +1,9 @@
 #! /usr/bin/ruby
 
+require 'time'
 require 'octokit'
 require 'optparse'
+require 'time'
 require 'English'
 require_relative 'opt_parser'
 require_relative 'git_op'
@@ -63,11 +65,16 @@ class Backend
     @gbexec = TestExecutor.new(@options)
   end
 
-  # public method for get prs opens
-  # given a repo
-  def open_prs
-    prs = @client.pull_requests(@repo, state: 'open')
-    puts 'no Pull request OPEN on the REPO!' unless prs.any?
+  # public method for get prs opened and matching the change_newer
+  # condition
+  def open_newer_prs
+    prs = []
+    @client.pull_requests(@repo, state: 'open').each do |pr|
+      if Time.now.utc - pr.updated_at < @options[:change_newer] * 60 ||
+         @options[:change_newer] < 0
+        prs << pr
+      end
+    end
     prs
   end
 
@@ -84,9 +91,8 @@ class Backend
 
   # public always rerun tests against the pr number if this exists
   def trigger_by_pr_number(pr)
-    return false if @pr_number.nil?
-    return false if @pr_number != pr.number
-    puts "Got triggered by PR_NUMBER OPTION, rerunning on #{@pr_number}"
+    return false if @pr_number.nil? || @pr_number != pr.number
+    # puts "Got triggered by PR_NUMBER OPTION, rerunning on #{@pr_number}"
     launch_test_and_setup_status(@repo, pr)
     true
   end
@@ -117,8 +123,7 @@ class Backend
     pr_all_files_type(@repo, pr.number, @file_type)
     return true if changelog_active(pr, comm_st)
     return false unless @pr_files.any?
-    exit 1 if @check
-    launch_test_and_setup_status(@repo, pr)
+    @check ? exit(1) : launch_test_and_setup_status(@repo, pr)
     true
   end
 
@@ -145,9 +150,8 @@ class Backend
   # # for retrigger all the tests.
   def magicword(repo, pr_number, context)
     magic_word_trigger = "@gitbot rerun #{context} !!!"
-    pr_comment = @client.issue_comments(repo, pr_number)
     # a pr contain always a comments, cannot be nil
-    pr_comment.each do |com|
+    @client.issue_comments(repo, pr_number).each do |com|
       # FIXME: if user in @org retrigger only
       # add org variable somewhere, maybe as option
       # next unless @client.organization_member?(@org, com.user.login)
@@ -163,8 +167,7 @@ class Backend
   # check all files of a Prs Number if they are a specific type
   # EX: Pr 56, we check if files are '.rb'
   def pr_all_files_type(repo, pr_number, type)
-    files = @client.pull_request_files(repo, pr_number)
-    files.each do |file|
+    @client.pull_request_files(repo, pr_number).each do |file|
       @pr_files.push(file.filename) if file.filename.include? type
     end
   end
@@ -262,8 +265,7 @@ class Backend
   def changelog_changed(repo, pr, comm_st)
     return false unless @changelog_test
     # only execute 1 time, don"t run if test is failed, or ok
-    return false if failed_status?(comm_st)
-    return false if success_status?(comm_st)
+    return false if failed_status?(comm_st) || success_status?(comm_st)
     do_changelog_test(repo, pr)
   end
 

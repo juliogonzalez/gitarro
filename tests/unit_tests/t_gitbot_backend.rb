@@ -5,10 +5,13 @@ require_relative 'helper'
 Dir.chdir Dir.pwd
 # Test the option parser
 class BackendTest2 < Minitest::Test
-  def test_full_option_import2
+  def setup
     @full_hash = { repo: 'gino/gitbot', context: 'python-t', description:
                    'functional', test_file: 'gino.sh', file_type: '.sh',
-                   git_dir: 'gitty' }
+                   git_dir: 'gitty', change_newer: -1 }
+  end
+
+  def test_full_option_import2
     gitbot = Backend.new(@full_hash)
     puts gitbot.j_status
     gitbot.j_status = 'foo'
@@ -25,9 +28,7 @@ class BackendTest2 < Minitest::Test
   end
 
   def test_run_script
-    @full_hash = { repo: 'gino/gitbot', context: 'python-t', description:
-                   'functional', test_file: 'test_data/script_ok.sh',
-                   file_type: '.sh', git_dir: 'gitty' }
+    @full_hash[:test_file] = 'test_data/script_ok.sh'
     gbex = TestExecutor.new(@full_hash)
     ck_files(gbex)
     test_file = 'nofile.txt'
@@ -47,5 +48,20 @@ class BackendTest2 < Minitest::Test
     end
     assert_equal("'#{test_file}\' doesn't exists.Enter valid file, -t option",
                  ex.message)
+  end
+
+  def test_get_all_prs
+    @full_hash[:repo] = 'openSUSE/gitbot'
+    gitbot = Backend.new(@full_hash)
+    prs = gitbot.open_newer_prs
+    assert(true, prs.any?)
+  end
+
+  def test_get_no_prs
+    @full_hash[:repo] = 'openSUSE/gitbot'
+    @full_hash[:change_newer] = 0
+    gitbot = Backend.new(@full_hash)
+    prs = gitbot.open_newer_prs
+    assert(0, prs.count)
   end
 end

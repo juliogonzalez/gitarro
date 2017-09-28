@@ -8,7 +8,15 @@ require_relative 'lib/git_op'
 require_relative 'lib/backend'
 
 b = Backend.new
-prs = b.open_prs
+
+prs = b.open_newer_prs
+
+# Exit without errors if no PRs were found
+if prs.empty?
+  puts 'There are no Pull Requests opened or with changes newer than ' \
+       "#{b.options[:change_newer]} minutes"
+  exit(0)
+end
 
 prs.each do |pr|
   puts '=' * 30 + "\n" + "TITLE_PR: #{pr.title}, NR: #{pr.number}\n" + '=' * 30
